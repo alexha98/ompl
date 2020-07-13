@@ -227,7 +227,7 @@ void ompl::geometric::ExplorerTestImpl::getPlannerData(ompl::base::PlannerData &
             std::cout << "]" << std::endl;
             //############################################################################
 
-            ob::PlannerDataVertexAnnotated *p1 = new ob::PlannerDataVertexAnnotated(states.at(0));
+            ob::PlannerDataVertexAnnotated *p1 = new ob::PlannerDataVertexAnnotated(getBundle()->cloneState(states.at(0)));
             p1->setLevel(level_);
             p1->setPath(idxPathI);
             data.addStartVertex(*p1);
@@ -238,7 +238,7 @@ void ompl::geometric::ExplorerTestImpl::getPlannerData(ompl::base::PlannerData &
                 getBundle()->printState(states.at(k));
 
 
-                ob::PlannerDataVertexAnnotated *p2 = new ob::PlannerDataVertexAnnotated(states.at(k + 1));
+                ob::PlannerDataVertexAnnotated *p2 = new ob::PlannerDataVertexAnnotated(getBundle()->cloneState(states.at(k + 1)));
                 p2->setLevel(level_);
                 p2->setPath(idxPathI);
 
