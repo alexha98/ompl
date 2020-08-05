@@ -2,6 +2,9 @@
 #define OMPL_GEOMETRIC_PLANNERS_BundleSpace_EXPLORERTESTIMPL_
 #include <ompl/geometric/planners/multilevel/algorithms/QMPStarImpl.h>
 #include <ompl/datastructures/PDF.h>
+#include <iostream>
+#include <fstream>
+
 
 namespace ompl
 {
@@ -38,7 +41,11 @@ namespace ompl
             std::vector<float> solutionPathLength;
             std::vector<std::vector<ompl::base::State *>> pathStackHead_;
             int selectedPath_{-1}; //selected path to sample from (if children try to sample this space)
-
+            int iteration = 0;
+            std::ofstream pathlist;
+            std::chrono::duration<double> elapsed_all_seconds;
+            std::vector<int> newpaths;
+            std::vector<int> erasepaths;
 
         };
     }  // namespace geometric

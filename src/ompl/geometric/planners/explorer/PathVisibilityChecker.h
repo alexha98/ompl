@@ -27,6 +27,12 @@ namespace ompl
       bool isPathClockwise(std::vector<ob::State*> &spath);
       bool CheckValidity(const std::vector<ob::State*> &s);
 
+      bool IsPathVisibleSimple(std::vector<BundleSpaceGraph::Vertex> &v1, std::vector<BundleSpaceGraph::Vertex> &v2, BundleSpaceGraph::Graph &graph);
+      bool IsPathVisibleSimple(std::vector<ob::State*> &s1, std::vector<ob::State*> &s2);
+
+
+
+
       void createStateAt(ob::SpaceInformationPtr si_,const std::vector<ob::State*> &path, const double &pathLength, const std::vector<double> &distances, const double newPosition, ob::State* s_interpolate) const;
       void computePathLength(ob::SpaceInformationPtr si_,const std::vector<ob::State*> &path, std::vector<double> &stateDistances, double &pathLength);
       bool isPathDynamicallyFeasible(const std::vector<ompl::base::State*> path) const;

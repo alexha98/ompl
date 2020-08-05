@@ -10,6 +10,7 @@
 #include <ompl/geometric/planners/multilevel/datastructures/pathrestriction/PathRestriction.h>
 #include <ompl/geometric/planners/explorer/PathVisibilityChecker.h>
 #include <ompl/geometric/planners/multilevel/datastructures/PlannerDataVertexAnnotated.h>
+#include <chrono>
 
 #define foreach BOOST_FOREACH
 
@@ -27,14 +28,27 @@ ompl::geometric::ExplorerTestImpl::~ExplorerTestImpl()
 
 void ompl::geometric::ExplorerTestImpl::grow()
 {
-    std::cout << "GROW" << std::endl;
+    auto start = std::chrono::system_clock::now();
 
     if (firstRun_)
     {
+        auto start = std::chrono::system_clock::now();
+        pathlist.open("paths.csv");
+        pathlist << "Iteration"
+                 << ",";
+        pathlist << "Zeit"
+                 << ",";
+        pathlist << "Vertices"
+                 << ",";
+        pathlist << "Edges"
+                 << ",";
+        pathlist << "Paths"
+                 << "\n";
         ExplorerTestImpl::firstGrow();
     }
     else
     {
+        iteration++;
         //(1) Get Random Sample
         if (!sampleBundleValid(xRandom_->state))
             return;
@@ -46,7 +60,7 @@ void ompl::geometric::ExplorerTestImpl::grow()
         //(3) Connect to K nearest neighbors
         connectNeighbors(xNew);
 
-        expand();
+        // expand();
 
         if (!hasSolution_)
         {
@@ -76,31 +90,40 @@ void ompl::geometric::ExplorerTestImpl::grow()
 
             // std::cout << graph_[path.at(0)]->state << std::endl;
 
-            bool isVisible = false;
-
-            for (uint i = 0; i < solutionspaths.size(); i++)
+            if (path.size() > 1 && path2.size() > 2)
             {
-                // FALL 2: verbessert bestehenden pfad
-                // Knoten wurde mit 2 Knoten des Pfades verbunden
-                if (pathVisibilityChecker_->IsPathVisible(path, solutionspaths.at(i), graph_))
+                if (path.at(path.size() - 1) != path2.at(2))
                 {
-                    std::cout << "ITS VISIBLE" << std::endl;
-                    isVisible = true;
-                    // Path is shorter than visible path else do nothing
-                    if (pathlength < solutionPathLength.at(i))
-                    {
-                        solutionspaths.at(i) = path;
-                        solutionPathLength.at(i) = pathlength;
-                    }
-                    break;
-                }
-            }
 
-            if (!isVisible)
-            {
-                std::cout << "NOT VISIBLE" << std::endl;
-                solutionspaths.push_back(path);
-                solutionPathLength.push_back(pathlength);
+                    bool isVisible = false;
+
+                    for (uint i = 0; i < solutionspaths.size(); i++)
+                    {
+                        // FALL 2: verbessert bestehenden pfad
+                        // Knoten wurde mit 2 Knoten des Pfades verbunden
+                        if (pathVisibilityChecker_->IsPathVisibleSimple(path, solutionspaths.at(i), graph_))
+                        {
+                            std::cout << "ITS VISIBLE" << std::endl;
+                            isVisible = true;
+                            // Path is shorter than visible path else do nothing
+                            if (pathlength < solutionPathLength.at(i))
+                            {
+                                solutionspaths.at(i) = path;
+                                solutionPathLength.at(i) = pathlength;
+                            }
+                            break;
+                        }
+                    }
+
+                    if (!isVisible)
+                    {
+                        std::cout << "NOT VISIBLE" << std::endl;
+                        solutionspaths.push_back(path);
+                        solutionPathLength.push_back(pathlength);
+                        newpaths.push_back(solutionspaths.size() - 1);
+                    }
+                } else std::cout << "SAME PART";
+
             }
         }
         // FALL 3: neuen Pfad
@@ -131,6 +154,75 @@ void ompl::geometric::ExplorerTestImpl::grow()
             pathStackHead_.push_back(temp);
         }
     }
+
+    if ((iteration % 100) == 0)
+    {
+        std::cout << "#################################################################################################"
+                     "#######"
+                  << std::endl;
+        for (int i = 0; i < newpaths.size(); ++i)
+        {
+            for (int j = 0; j < solutionspaths.size(); ++j)
+            {
+                if (solutionspaths.at(newpaths.at(i)) != solutionspaths.at(j))
+                {
+                    if (pathVisibilityChecker_->IsPathVisible(solutionspaths.at(newpaths.at(i)), solutionspaths.at(j),
+                                                              graph_))
+                    {
+                        std::cout << "i: " << i << " j: " << j << std::endl;
+
+                        if (solutionPathLength.at(i) <= solutionPathLength.at(j))
+                        {
+                            if(std::find(erasepaths.begin(),erasepaths.end(),j) != erasepaths.end()){
+
+                                erasepaths.push_back(j);
+                            }
+
+                        }
+                        else
+                        {
+                            if(std::find(erasepaths.begin(),erasepaths.end(),i) != erasepaths.end()){
+                                erasepaths.push_back(i);
+                            }
+
+                        }
+                    }
+                }
+            }
+        }
+        sort(erasepaths.begin(), erasepaths.end());
+        reverse(erasepaths.begin(), erasepaths.end());
+        for (int i = 0; i < erasepaths.size(); i++)
+        {
+            std::cout << "ERASE: " << erasepaths.at(i) << std::endl;
+            solutionspaths.erase(solutionspaths.begin() + erasepaths.at(i));
+            solutionPathLength.erase(solutionPathLength.begin() + erasepaths.at(i));
+        }
+        erasepaths.clear();
+        newpaths.clear();
+    }
+
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end - start;
+    elapsed_all_seconds = elapsed_all_seconds + elapsed_seconds;
+    std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
+    std::cout << "ALL time: " << elapsed_all_seconds.count() << "s\n";
+
+    pathlist << iteration << ",";
+    pathlist << elapsed_all_seconds.count() << ",";
+    pathlist << getNumberOfVertices() << ",";
+    pathlist << getNumberOfEdges() << ",";
+
+    for (int i = 0; i < solutionPathLength.size(); ++i)
+    {
+        pathlist << solutionPathLength.at(i) << ",";
+    }
+    pathlist << "\n";
+
+    if (iteration > 10000)
+    {
+        pathlist.close();
+    }
 }
 
 void ompl::geometric::ExplorerTestImpl::firstGrow()
@@ -154,6 +246,7 @@ void ompl::geometric::ExplorerTestImpl::firstGrow()
 
     while (!hasSolution_)
     {
+        iteration++;
         //(1) Get Random Sample
         if (!sampleBundleValid(xRandom_->state))
             return;
@@ -165,7 +258,7 @@ void ompl::geometric::ExplorerTestImpl::firstGrow()
         //(3) Connect to K nearest neighbors
         connectNeighbors(xNew);
 
-        expand();
+        // expand();
 
         if (!hasSolution_)
         {
@@ -186,6 +279,14 @@ void ompl::geometric::ExplorerTestImpl::firstGrow()
 
                 solutionspaths.push_back(path);
                 solutionPathLength.push_back(pathlength);
+
+                pathlist << iteration << ",";
+
+                for (int i = 0; i < solutionPathLength.size(); ++i)
+                {
+                    pathlist << solutionPathLength.at(i) << ",";
+                }
+                pathlist << "\n";
             }
         }
     }
@@ -216,29 +317,28 @@ void ompl::geometric::ExplorerTestImpl::getPlannerData(ompl::base::PlannerData &
             idxPathI.clear();
             idxPathI.push_back(i);
 
-
             //############################################################################
             // DEBUG
-            std::cout << "[";
+            /*std::cout << "[";
             for (uint k = 0; k < idxPathI.size(); k++)
             {
                 std::cout << idxPathI.at(k) << " ";
             }
-            std::cout << "]" << std::endl;
+            std::cout << "]" << std::endl;*/
             //############################################################################
 
-            ob::PlannerDataVertexAnnotated *p1 = new ob::PlannerDataVertexAnnotated(getBundle()->cloneState(states.at(0)));
+            ob::PlannerDataVertexAnnotated *p1 =
+                new ob::PlannerDataVertexAnnotated(getBundle()->cloneState(states.at(0)));
             p1->setLevel(level_);
             p1->setPath(idxPathI);
             data.addStartVertex(*p1);
 
-            for (uint k = 0; k < states.size() -1 ; k++)
+            for (uint k = 0; k < states.size() - 1; k++)
             {
-
                 getBundle()->printState(states.at(k));
 
-
-                ob::PlannerDataVertexAnnotated *p2 = new ob::PlannerDataVertexAnnotated(getBundle()->cloneState(states.at(k + 1)));
+                ob::PlannerDataVertexAnnotated *p2 =
+                    new ob::PlannerDataVertexAnnotated(getBundle()->cloneState(states.at(k + 1)));
                 p2->setLevel(level_);
                 p2->setPath(idxPathI);
 
@@ -257,7 +357,7 @@ void ompl::geometric::ExplorerTestImpl::getPlannerData(ompl::base::PlannerData &
         }
 
         // GET PLANNER ROADMAP DATA
-       foreach (const Edge e, boost::edges(graph_))
+        foreach (const Edge e, boost::edges(graph_))
         {
             const Vertex v1 = boost::source(e, graph_);
             const Vertex v2 = boost::target(e, graph_);
@@ -275,7 +375,6 @@ void ompl::geometric::ExplorerTestImpl::getPlannerData(ompl::base::PlannerData &
             data.addVertex(p);
         }
     }
-
 }
 
 int ompl::geometric::ExplorerTestImpl::getSelectedPath()

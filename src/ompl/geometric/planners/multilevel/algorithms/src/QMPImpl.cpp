@@ -43,6 +43,7 @@
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/geometric/planners/multilevel/datastructures/graphsampler/GraphSampler.h>
 #include <ompl/geometric/planners/multilevel/datastructures/pathrestriction/PathRestriction.h>
+#include <chrono>
 
 #define foreach BOOST_FOREACH
 
@@ -98,8 +99,12 @@ unsigned int ompl::geometric::QMPImpl::computeK()
 
 void ompl::geometric::QMPImpl::grow()
 {
+    auto start = std::chrono::system_clock::now();
+
     if (firstRun_)
     {
+        auto start = std::chrono::system_clock::now();
+
         init();
         vGoal_ = addConfiguration(qGoal_);
         firstRun_ = false;
@@ -136,6 +141,12 @@ void ompl::geometric::QMPImpl::grow()
             hasSolution_ = true;
         }
     }
+
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end-start;
+    elapsed_all_seconds = elapsed_all_seconds + elapsed_seconds;
+    std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
+    std::cout << "ALL time: " << elapsed_all_seconds.count() << "s\n";
 }
 
 void ompl::geometric::QMPImpl::connectNeighbors(Configuration *x)
@@ -188,5 +199,8 @@ void ompl::geometric::QMPImpl::expand()
         }
         if (!sameComponent(prev->index, last->index))
             ompl::geometric::BundleSpaceGraph::addEdge(prev->index, last->index);
+
+
+
     }
 }

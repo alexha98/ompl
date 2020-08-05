@@ -78,6 +78,7 @@ namespace ompl
 
             /** \brief k nearest variable */
             unsigned int k_NearestNeighbors_{10};
+            std::chrono::duration<double> elapsed_all_seconds;
 
             PDF pdf;
         };
