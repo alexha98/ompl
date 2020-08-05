@@ -85,45 +85,45 @@ void ompl::geometric::ExplorerTestImpl::grow()
             std::vector<Vertex> path2 = shortestVertexPath_;
             // og::PathGeometric &gpath2 = static_cast<og::PathGeometric &>(*pPath2);
 
-            path.insert(path.end(), path2.begin() + 1, path2.end());
             float pathlength = pPath->length() + pPath2->length();
+            path.insert(path.end(), path2.begin() + 1, path2.end());
 
             // std::cout << graph_[path.at(0)]->state << std::endl;
 
-            if (path.size() > 1 && path2.size() > 2)
+            std::vector<Vertex> tempPath = path;
+            sort(tempPath.begin(),tempPath.end());
+            auto it = std::unique(tempPath.begin(),tempPath.end());
+            bool noduplicates = (it == tempPath.end());
+
+            if (noduplicates)
             {
-                if (path.at(path.size() - 1) != path2.at(2))
+                bool isVisible = false;
+
+                for (uint i = 0; i < solutionspaths.size(); i++)
                 {
-
-                    bool isVisible = false;
-
-                    for (uint i = 0; i < solutionspaths.size(); i++)
+                    // FALL 2: verbessert bestehenden pfad
+                    // Knoten wurde mit 2 Knoten des Pfades verbunden
+                    if (pathVisibilityChecker_->IsPathVisible(path, solutionspaths.at(i), graph_))
                     {
-                        // FALL 2: verbessert bestehenden pfad
-                        // Knoten wurde mit 2 Knoten des Pfades verbunden
-                        if (pathVisibilityChecker_->IsPathVisibleSimple(path, solutionspaths.at(i), graph_))
+                        std::cout << "ITS VISIBLE" << std::endl;
+                        isVisible = true;
+                        // Path is shorter than visible path else do nothing
+                        if (pathlength < solutionPathLength.at(i))
                         {
-                            std::cout << "ITS VISIBLE" << std::endl;
-                            isVisible = true;
-                            // Path is shorter than visible path else do nothing
-                            if (pathlength < solutionPathLength.at(i))
-                            {
-                                solutionspaths.at(i) = path;
-                                solutionPathLength.at(i) = pathlength;
-                            }
-                            break;
+                            solutionspaths.at(i) = path;
+                            solutionPathLength.at(i) = pathlength;
                         }
+                        break;
                     }
+                }
 
-                    if (!isVisible)
-                    {
-                        std::cout << "NOT VISIBLE" << std::endl;
-                        solutionspaths.push_back(path);
-                        solutionPathLength.push_back(pathlength);
-                        newpaths.push_back(solutionspaths.size() - 1);
-                    }
-                } else std::cout << "SAME PART";
-
+                if (!isVisible)
+                {
+                    std::cout << "NOT VISIBLE" << std::endl;
+                    solutionspaths.push_back(path);
+                    solutionPathLength.push_back(pathlength);
+                    newpaths.push_back(solutionspaths.size() - 1);
+                }
             }
         }
         // FALL 3: neuen Pfad
@@ -155,7 +155,7 @@ void ompl::geometric::ExplorerTestImpl::grow()
         }
     }
 
-    if ((iteration % 100) == 0)
+    if (((iteration % 100) == 0) && !(newpaths.empty()))
     {
         std::cout << "#################################################################################################"
                      "#######"
@@ -166,25 +166,24 @@ void ompl::geometric::ExplorerTestImpl::grow()
             {
                 if (solutionspaths.at(newpaths.at(i)) != solutionspaths.at(j))
                 {
-                    if (pathVisibilityChecker_->IsPathVisible(solutionspaths.at(newpaths.at(i)), solutionspaths.at(j),
+                    if (pathVisibilityChecker_->IsPathVisibleSimple(solutionspaths.at(newpaths.at(i)), solutionspaths.at(j),
                                                               graph_))
                     {
                         std::cout << "i: " << i << " j: " << j << std::endl;
 
                         if (solutionPathLength.at(i) <= solutionPathLength.at(j))
                         {
-                            if(std::find(erasepaths.begin(),erasepaths.end(),j) != erasepaths.end()){
-
+                            if (std::find(erasepaths.begin(), erasepaths.end(), j) != erasepaths.end())
+                            {
                                 erasepaths.push_back(j);
                             }
-
                         }
                         else
                         {
-                            if(std::find(erasepaths.begin(),erasepaths.end(),i) != erasepaths.end()){
+                            if (std::find(erasepaths.begin(), erasepaths.end(), i) != erasepaths.end())
+                            {
                                 erasepaths.push_back(i);
                             }
-
                         }
                     }
                 }
@@ -219,7 +218,7 @@ void ompl::geometric::ExplorerTestImpl::grow()
     }
     pathlist << "\n";
 
-    if (iteration > 10000)
+    if (iteration > 1000000)
     {
         pathlist.close();
     }

@@ -39,6 +39,8 @@
 #define OMPL_GEOMETRIC_PLANNERS_BundleSpace_QMPIMPL_
 #include <ompl/geometric/planners/multilevel/datastructures/BundleSpaceGraph.h>
 #include <ompl/datastructures/PDF.h>
+#include <iostream>
+#include <fstream>
 
 namespace ompl
 {
@@ -79,7 +81,8 @@ namespace ompl
             /** \brief k nearest variable */
             unsigned int k_NearestNeighbors_{10};
             std::chrono::duration<double> elapsed_all_seconds;
-
+            std::ofstream pathlist;
+            int iteration;
             PDF pdf;
         };
     }  // namespace geometric

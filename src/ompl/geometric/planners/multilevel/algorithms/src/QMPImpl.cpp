@@ -100,14 +100,25 @@ unsigned int ompl::geometric::QMPImpl::computeK()
 void ompl::geometric::QMPImpl::grow()
 {
     auto start = std::chrono::system_clock::now();
-
+    iteration++;
     if (firstRun_)
     {
-        auto start = std::chrono::system_clock::now();
-
+        iteration = 1;
         init();
         vGoal_ = addConfiguration(qGoal_);
         firstRun_ = false;
+
+        pathlist.open("paths.csv");
+        pathlist << "Iteration"
+                 << ",";
+        pathlist << "Zeit"
+                 << ",";
+        pathlist << "Vertices"
+                 << ",";
+        pathlist << "Edges"
+                 << ",";
+        pathlist << "Paths"
+                 << "\n";
 
         if (hasBaseSpace())
         {
@@ -142,11 +153,28 @@ void ompl::geometric::QMPImpl::grow()
         }
     }
 
+
+
+
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end-start;
     elapsed_all_seconds = elapsed_all_seconds + elapsed_seconds;
     std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
     std::cout << "ALL time: " << elapsed_all_seconds.count() << "s\n";
+
+    pathlist << iteration << ",";
+    std::cout << iteration << std::endl;
+    pathlist << elapsed_all_seconds.count() << ",";
+    pathlist << getNumberOfVertices() << ",";
+    pathlist << getNumberOfEdges() << ",";
+    if(hasSolution_){
+        ompl::base::PathPtr path = getPath(vStart_,vGoal_);
+        pathlist << path->length()<< ",";
+        std::cout << path->length() << std::endl;
+        
+    }
+    pathlist << "\n";
+
 }
 
 void ompl::geometric::QMPImpl::connectNeighbors(Configuration *x)
