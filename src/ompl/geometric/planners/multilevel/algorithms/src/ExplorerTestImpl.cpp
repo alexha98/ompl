@@ -42,6 +42,7 @@ void ompl::geometric::ExplorerTestImpl::grow()
                  << ",";
         pathlist << "Edges"
                  << ",";
+        pathlist << "#Path" << ",";
         pathlist << "Paths"
                  << "\n";
         ExplorerTestImpl::firstGrow();
@@ -49,6 +50,7 @@ void ompl::geometric::ExplorerTestImpl::grow()
     else
     {
         iteration++;
+        std::cout << "ITERATION " << iteration << std::endl;
         //(1) Get Random Sample
         if (!sampleBundleValid(xRandom_->state))
             return;
@@ -123,6 +125,11 @@ void ompl::geometric::ExplorerTestImpl::grow()
                     solutionspaths.push_back(path);
                     solutionPathLength.push_back(pathlength);
                     newpaths.push_back(solutionspaths.size() - 1);
+
+                    std::cout << "########################################" << std::endl;
+                    std::cout << "NEWPATH: " << newpaths.size() << std::endl;
+                    std::cout << "########################################" << std::endl;
+
                 }
             }
         }
@@ -155,42 +162,55 @@ void ompl::geometric::ExplorerTestImpl::grow()
         }
     }
 
-    if (((iteration % 100) == 0) && !(newpaths.empty()))
+   /* if (((iteration % 100) == 0) && !(newpaths.empty()))
     {
         std::cout << "#################################################################################################"
                      "#######"
                   << std::endl;
+        std::cout << "########################################" << std::endl;
+        std::cout << "NEWPATH: " << newpaths.size() << std::endl;
+        std::cout << "########################################" << std::endl;
         for (int i = 0; i < newpaths.size(); ++i)
         {
             for (int j = 0; j < solutionspaths.size(); ++j)
             {
-                if (solutionspaths.at(newpaths.at(i)) != solutionspaths.at(j))
+                if (newpaths.at(i) != j)
                 {
-                    if (pathVisibilityChecker_->IsPathVisibleSimple(solutionspaths.at(newpaths.at(i)), solutionspaths.at(j),
+                    if (pathVisibilityChecker_->IsPathVisible(solutionspaths.at(newpaths.at(i)), solutionspaths.at(j),
                                                               graph_))
                     {
-                        std::cout << "i: " << i << " j: " << j << std::endl;
+                        std::cout<<"VISIBLE"<<std::endl;
+                        std::cout << "i: " << newpaths.at(i) << " j: " << j << std::endl;
 
                         if (solutionPathLength.at(i) <= solutionPathLength.at(j))
                         {
-                            if (std::find(erasepaths.begin(), erasepaths.end(), j) != erasepaths.end())
-                            {
+                            std::cout << "SHORTER j" << std::endl;
                                 erasepaths.push_back(j);
-                            }
+
                         }
                         else
                         {
-                            if (std::find(erasepaths.begin(), erasepaths.end(), i) != erasepaths.end())
-                            {
-                                erasepaths.push_back(i);
-                            }
+                            std::cout << "SHORTER i" << std::endl;
+
+                            erasepaths.push_back(newpaths.at(i));
                         }
+                        break;
                     }
                 }
             }
         }
-        sort(erasepaths.begin(), erasepaths.end());
+        std::cout << "########################################" << std::endl;
+        std::cout << "ERASE SIZE : " << erasepaths.size() << std::endl;
+        std::cout << "########################################" << std::endl;
+        sort(erasepaths.begin(),erasepaths.end());
+
+        erasepaths.erase(std::unique(erasepaths.begin(), erasepaths.end()), erasepaths.end());
+
+        std::cout << "########################################" << std::endl;
+        std::cout << "ERASE SIZE : " << erasepaths.size() << std::endl;
+        std::cout << "########################################" << std::endl;
         reverse(erasepaths.begin(), erasepaths.end());
+
         for (int i = 0; i < erasepaths.size(); i++)
         {
             std::cout << "ERASE: " << erasepaths.at(i) << std::endl;
@@ -199,7 +219,7 @@ void ompl::geometric::ExplorerTestImpl::grow()
         }
         erasepaths.clear();
         newpaths.clear();
-    }
+    }*/
 
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end - start;
@@ -211,6 +231,7 @@ void ompl::geometric::ExplorerTestImpl::grow()
     pathlist << elapsed_all_seconds.count() << ",";
     pathlist << getNumberOfVertices() << ",";
     pathlist << getNumberOfEdges() << ",";
+    pathlist << solutionspaths.size() << ",";
 
     for (int i = 0; i < solutionPathLength.size(); ++i)
     {
@@ -218,7 +239,7 @@ void ompl::geometric::ExplorerTestImpl::grow()
     }
     pathlist << "\n";
 
-    if (iteration > 1000000)
+    if (iteration > 1000)
     {
         pathlist.close();
     }
