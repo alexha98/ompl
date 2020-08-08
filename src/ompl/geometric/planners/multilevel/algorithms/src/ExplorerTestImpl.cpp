@@ -105,7 +105,7 @@ void ompl::geometric::ExplorerTestImpl::grow()
                 {
                     // FALL 2: verbessert bestehenden pfad
                     // Knoten wurde mit 2 Knoten des Pfades verbunden
-                    if (pathVisibilityChecker_->IsPathVisible(path, solutionspaths.at(i), graph_))
+                    if (pathVisibilityChecker_->IsPathVisibleSimple(path, solutionspaths.at(i), graph_))
                     {
                         std::cout << "ITS VISIBLE" << std::endl;
                         isVisible = true;
@@ -162,7 +162,7 @@ void ompl::geometric::ExplorerTestImpl::grow()
         }
     }
 
-   /* if (((iteration % 100) == 0) && !(newpaths.empty()))
+    if (((iteration % 100) == 0) && !(newpaths.empty()))
     {
         std::cout << "#################################################################################################"
                      "#######"
@@ -219,7 +219,7 @@ void ompl::geometric::ExplorerTestImpl::grow()
         }
         erasepaths.clear();
         newpaths.clear();
-    }*/
+    }
 
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end - start;
